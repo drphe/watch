@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Xem TV Online</title>
+
+  <style>
+    :root{
+      --bg: #ffffff;
+      --text: #111111;
+      --muted: #666666;
+      --border: #e6e6e6;
+      --card: #fafafa;
+      --hover: #f2f2f2;
+      --badge-bg: #ffffff;
+      --shadow: 0 1px 10px rgba(0,0,0,.06);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg: #0f1115;
+        --text: #eaeef5;
+        --muted: #a7b0c0;
+        --border: #232836;
+        --card: #141824;
+        --hover: #1a2030;
+        --badge-bg: #0f1115;
+        --shadow: 0 1px 14px rgba(0,0,0,.35);
+      }
+    }
+::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 0 grey;
+    border-radius: 1px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px
+}
+
+::-webkit-scrollbar {
+    width: 1px;
+    height: 1px;
+    background: transparent;
+}
+
+    *{ box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header{
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    header strong{ font-size: 16px; }
+    .hint{ font-size: 12px; color: var(--muted); }
+
+    main{
+      display:grid;
+      grid-template-columns: 380px 1fr;
+      height: 100vh;
+    }
+    .left{
+      border-right: 1px solid var(--border);
+      overflow:auto;
+    }
+    .right{
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+
+    .controls{
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      background: var(--bg);
+      position: sticky;
+      top: 0px;
+      z-index: 4;
+    }
+    input[type="search"]{
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--text);
+      outline: none;
+    }
+    select{
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--text);
+      outline: none;
+    }
+    .list{
+      padding: 10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .item{
+      padding: 10px 10px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      cursor:pointer;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .item:hover{ background: var(--hover); }
+
+    .logo{
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--badge-bg);
+      border: 1px solid var(--border);
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .info{ min-width: 0; flex: 1; }
+    .name{ font-weight: 650; line-height: 1.2; }
+    .meta{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .badge{
+      font-size: 11px;
+      border:1px solid var(--border);
+      padding:2px 8px;
+      border-radius: 999px;
+      background: var(--badge-bg);
+      color: var(--text);
+    }
+    .url{
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+      opacity: .9;
+    }
+
+    .now{
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      background: var(--bg);
+    }
+
+    video{
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+
+    /* Loading overlay */
+    .overlay{
+      position: fixed;
+      inset: 0;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      gap: 14px;
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(10px);
+      z-index: 9999;
+      transition: opacity .25s ease;
+    }
+    .overlay.hidden{
+      opacity: 0;
+      pointer-events: none;
+    }
+    .spinner{
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 3px solid var(--border);
+      border-top-color: var(--text);
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
+
+    .err{
+      font-size: 13px;
+      color: var(--muted);
+      max-width: 520px;
+      text-align:center;
+      padding: 0 18px;
+      line-height: 1.4;
+    }
+    .btn{
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .btn:hover{ background: var(--hover); }
+
+    @media (max-width: 900px){
+      main{ grid-template-columns: 1fr; height:auto; }
+      .left{ border-right:none; border-bottom:1px solid var(--border); height: 45vh; }
+      .right{ height: 55vh; }
+      .controls{ top: 0px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main>
+    <section class="left">
+      <div class="controls">
+        <div style="flex:1; min-width:220px;">
+          <input id="q" type="search" placeholder="Tìm kênh / group..." />
+        </div>
+        <select id="group">
+          <option value="">Tất cả group</option>
+        </select>
+      </div>
+      <div id="list" class="list"></div>
+    </section>
+
+    <section class="right">
+      <div id="now" class="now">Chưa chọn kênh</div>
+      <div style="flex:1; min-height:0;">
+        <video id="video" controls playsinline></video>
+      </div>
+    </section>
+  </main>
+
+  <!-- Loading overlay -->
+  <div id="overlay" class="overlay">
+    <div class="spinner"></div>
+    <div class="err" id="overlayText">Đang tải playlist từ URL…</div>
+    <button class="btn" id="retry" style="display:none;">Thử lại</button>
+  </div>
+
+  <!-- HLS.js -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+  <script>
+    const PLAYLIST_URL = "https://raw.githubusercontent.com/drphe/data/refs/heads/main/tv.m3u";
+
+    const $ = (id) => document.getElementById(id);
+    const listEl = $("list");
+    const qEl = $("q");
+    const groupEl = $("group");
+    const nowEl = $("now");
+    const video = $("video");
+    const overlay = $("overlay");
+    const overlayText = $("overlayText");
+    const retryBtn = $("retry");
+
+    // Default logo (SVG data URI)
+    const DEFAULT_LOGO = `data:image/svg+xml;charset=utf-8,` + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+        <defs>
+          <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stop-color="#6a5cff"/>
+            <stop offset="1" stop-color="#00c2ff"/>
+          </linearGradient>
+        </defs>
+        <rect x="8" y="8" width="80" height="80" rx="18" fill="url(#g)"/>
+        <path d="M40 34h16c8 0 14 6 14 14s-6 14-14 14H40V34zm10 10v18h6c4 0 7-3 7-9s-3-9-7-9h-6z" fill="white" opacity="0.95"/>
+        <path d="M28 58c0 7 5 12 12 12" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+      </svg>
+    `);
+
+    let channels = [];
+    let hls = null;
+
+    function stopPlayer(){
+      if (hls) {
+        hls.destroy();
+        hls = null;
+      }
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+    }
+
+    function isHlsUrl(url){
+      return /\.m3u8(\?|#|$)/i.test(url);
+    }
+
+    function play(url, name){
+      stopPlayer();
+      nowEl.textContent = `Đang phát: ${name}`;
+      const canNative = video.canPlayType("application/vnd.apple.mpegurl");
+
+      if (isHlsUrl(url) && !canNative && window.Hls && Hls.isSupported()){
+        hls = new Hls({ enableWorker: true });
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
+        hls.on(Hls.Events.ERROR, (e, data) => console.warn("HLS error", data));
+      } else {
+        video.src = url;
+        video.play().catch(()=>{});
+      }
+    }
+
+    // Parse #EXTINF lines (tvg-name, tvg-logo, group-title)
+    function parseM3U(text){
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const out = [];
+      let current = null;
+
+      for (let i = 0; i < lines.length; i++){
+        const line = lines[i];
+
+        if (line.startsWith("#EXTINF")){
+          current = { name: "", url: "", group: "", logo: "", raw: line };
+
+          const attrs = {};
+          const attrRegex = /([a-zA-Z0-9_-]+)="([^"]*)"/g;
+          let m;
+          while ((m = attrRegex.exec(line)) !== null){
+            attrs[m[1]] = m[2];
+          }
+
+          current.group = attrs["group-title"] || "";
+          current.logo = attrs["tvg-logo"] || "";
+
+          const comma = line.indexOf(",");
+          if (comma !== -1) current.name = line.slice(comma + 1).trim();
+          if (!current.name) current.name = attrs["tvg-name"] || "Unknown";
+
+        } else if (!line.startsWith("#")){
+          if (current){
+            current.url = line;
+            out.push(current);
+            current = null;
+          }
+        }
+      }
+      return out;
+    }
+
+    function escapeHtml(s){
+      return (s ?? "").replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[c]));
+    }
+
+    function renderGroups(items){
+      const groups = Array.from(new Set(items.map(x => x.group).filter(Boolean)))
+        .sort((a,b)=>a.localeCompare(b));
+      groupEl.innerHTML =
+        `<option value="">Tất cả group</option>` +
+        groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join("");
+    }
+
+    function renderList(){
+      const q = qEl.value.trim().toLowerCase();
+      const g = groupEl.value;
+
+      const filtered = channels.filter(ch => {
+        const okGroup = !g || ch.group === g;
+        const okQ = !q || (
+          ch.name.toLowerCase().includes(q) ||
+          (ch.group||"").toLowerCase().includes(q) ||
+          ch.url.toLowerCase().includes(q)
+        );
+        return okGroup && okQ;
+      });
+
+      listEl.innerHTML = filtered.map((ch, idx) => {
+        const logo = ch.logo ? ch.logo : DEFAULT_LOGO;
+        return `
+          <div class="item" data-idx="${idx}">
+            <img class="logo" src="${escapeHtml(logo)}" alt="logo"
+                 onerror="this.onerror=null;this.src='${DEFAULT_LOGO}'" />
+            <div class="info">
+              <div class="name">${escapeHtml(ch.name)}</div>
+              <div class="meta">
+                ${ch.group ? `<span class="badge">${escapeHtml(ch.group)}</span>` : ""}
+                ${isHlsUrl(ch.url) ? `<span class="badge">HLS</span>` : `<span class="badge">Direct</span>`}
+              </div>
+              <div class="meta url">${escapeHtml(ch.url)}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      Array.from(listEl.querySelectorAll(".item")).forEach(el => {
+        el.addEventListener("click", () => {
+          const idx = Number(el.getAttribute("data-idx"));
+          const ch = filtered[idx];
+          play(ch.url, ch.name);
+        });
+      });
+    }
+
+    function showLoading(msg){
+      overlayText.textContent = msg || "Đang tải...";
+      retryBtn.style.display = "none";
+      overlay.classList.remove("hidden");
+    }
+
+    function showError(msg){
+      overlayText.textContent = msg || "Có lỗi xảy ra.";
+      retryBtn.style.display = "inline-flex";
+      overlay.classList.remove("hidden");
+    }
+
+    function hideLoading(){
+      overlay.classList.add("hidden");
+      // giữ overlay trong DOM (ẩn bằng opacity) để chuyển mượt
+      setTimeout(() => {
+        if (overlay.classList.contains("hidden")) overlay.style.display = "none";
+      }, 250);
+    }
+
+    async function loadPlaylist(){
+      overlay.style.display = "flex";
+      showLoading("Đang tải playlist từ URL…");
+
+      stopPlayer();
+      channels = [];
+      renderGroups([]);
+      listEl.innerHTML = "";
+
+      try{
+        const res = await fetch(PLAYLIST_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+
+        channels = parseM3U(text);
+        renderGroups(channels);
+        renderList();
+
+        nowEl.textContent = `Đã load ${channels.length} kênh. Chọn kênh để phát.`;
+
+        hideLoading();
+      } catch (err){
+        console.error(err);
+        showError(
+          "Không tải được playlist. Có thể do mạng, GitHub bị chặn, hoặc CORS/URL lỗi.\n" +
+          `Chi tiết: ${String(err)}`
+        );
+      }
+    }
+
+    retryBtn.addEventListener("click", loadPlaylist);
+    qEl.addEventListener("input", renderList);
+    groupEl.addEventListener("change", renderList);
+
+    // Auto load on start
+    loadPlaylist();
+  </script>
+</body>
+</html>
