@@ -464,6 +464,7 @@
         nowEl.textContent = `Đã load ${channels.length} kênh. Chọn kênh để phát.`;
 
         hideLoading();
+        play(channels[0].url, channels[0].name);
       } catch (err){
         console.error(err);
         showError(
@@ -479,6 +480,7 @@
 
     // Auto load on start
     loadPlaylist();
+
   </script>
 </body>
 </html>
